@@ -116,8 +116,7 @@ const Actions = () => {
   const [open, setOpen] = useState(false);
 
   const handleViewOnGithub = async () => {
-    const githubUrl = 'https://github.com/TonyL1u/nano-ai-ios';
-
+    const githubUrl = 'https://github.com/TonyL1u/nano-ai';
     const supported = await Linking.canOpenURL(githubUrl);
 
     if (supported) {
