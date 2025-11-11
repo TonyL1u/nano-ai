@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 
-import { OllamaApi } from '@/lib/ollama-api';
+import { Ollama } from '@/lib/ai-client/ollama';
 import { ConnectStatus, useSettingsValue } from '@/store/settings';
 
 import { useMessage } from './use-message';
@@ -13,7 +13,7 @@ export function useOllama() {
   const [, { get, set, push }] = useMessage();
   const [model] = useModel();
   const { ollama } = useSettingsValue();
-  const { host } = ollama;
+  const { host, apiKey } = ollama;
   const toast = useToast();
 
   const request = async (input: string, think = false) => {
@@ -22,7 +22,7 @@ export function useOllama() {
 
     try {
       const { name, canThink } = model;
-      const ollamaApi = new OllamaApi(host);
+      const ollamaApi = new Ollama(host, apiKey);
 
       const createAt = +new Date();
       const newUserMessage = { role: 'user', content: input, createAt };

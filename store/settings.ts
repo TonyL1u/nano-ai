@@ -10,9 +10,16 @@ export enum ConnectStatus {
   DEFAULT
 }
 
+export enum ServerType {
+  CUSTOM_HOST = 'custom_host',
+  OLLAMA_CLOUD = 'ollama_cloud'
+}
+
 export interface Settings {
   ollama: {
+    serverType: ServerType;
     host: string;
+    apiKey?: string;
     connectStatus: ConnectStatus;
     models: (ModelResponse & { canThink?: boolean })[];
   };
@@ -21,6 +28,7 @@ export interface Settings {
 
 export const settings = createStorageAtom(StorageKey.SETTINGS, {
   ollama: {
+    serverType: ServerType.CUSTOM_HOST,
     host: 'localhost:11434',
     connectStatus: ConnectStatus.DEFAULT,
     models: []

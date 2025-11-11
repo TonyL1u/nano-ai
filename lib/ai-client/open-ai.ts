@@ -1,26 +1,27 @@
 import { fetch } from 'expo/fetch';
 import type { ChatRequest, ChatResponse, Config, ErrorResponse, ModelResponse } from 'ollama';
+import { AbortableAsyncIterator } from 'ollama';
 
-import { AbortableAsyncIterator, parseJSON } from './utils';
+import { parseJSON } from '../utils';
+import type { AIClientImpl } from './impl';
 
-export class OllamaApi {
+export class OpenAI implements AIClientImpl {
   #config: Config = {
-    // host: 'https://api.oneabc.org',
-    // host: 'http://172.20.10.2:11434',
-    host: 'localhost:11434',
+    host: '',
     headers: {
       Accept: 'text/event-stream',
-      'Content-Type': 'application/json'
-      // 'x-requested-with': 'XMLHttpRequest',
-      // Authorization: `Bearer sk-a3w8r61FRX7UZWrv4f8c8a65E7E14c2aAcD9E16b08439414`,
+      'Content-Type': 'application/json',
+      'x-requested-with': 'XMLHttpRequest'
     }
   };
   #ongoingStreamedRequests: AbortableAsyncIterator<object>[] = [];
 
-  constructor(host?: string) {
-    if (host) {
-      this.#config.host = host;
-    }
+  constructor(host: string, apiKey: string) {
+    this.#config.host = host;
+    this.#config.headers = {
+      ...this.#config.headers,
+      Authorization: `Bearer ${apiKey}`
+    };
   }
 
   get #baseUrl() {
@@ -87,7 +88,7 @@ export class OllamaApi {
     return this.#post<ChatResponse>('chat', request);
   }
 
-  tags() {
+  list() {
     return this.#get<{ models: ModelResponse[] }>('tags');
   }
 }

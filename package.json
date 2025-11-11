@@ -19,6 +19,7 @@
     "@rn-primitives/select": "^1.2.0",
     "@rn-primitives/slot": "^1.2.0",
     "@rn-primitives/switch": "^1.2.0",
+    "@rn-primitives/tabs": "^1.2.0",
     "@rn-primitives/toggle": "^1.2.0",
     "@sekizlipenguen/react-native-popup-confirm-toast": "^1.0.8",
     "class-variance-authority": "^0.7.1",

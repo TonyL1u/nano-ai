@@ -6,32 +6,42 @@ import { useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { SettingSection } from '@/components/setting-section';
+import { TextLink } from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Icon } from '@/components/ui/icon';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/hooks/use-toast';
-import { OllamaApi } from '@/lib/ollama-api';
+import { Ollama } from '@/lib/ai-client/ollama';
 import { canModelThink, cn } from '@/lib/utils';
 import { useChats } from '@/store/chats';
-import { ConnectStatus, useSettings } from '@/store/settings';
+import { ConnectStatus, ServerType, useSettings } from '@/store/settings';
 
 const OllamaServer = () => {
-  const [settings, setSettings] = useSettings();
-  const { ollama } = settings;
-  const { host, connectStatus } = ollama;
-  const [ollamaHost, setOllamaHost] = useState(host);
   const [connecting, setConnecting] = useState(false);
   const toast = useToast();
+  const [settings, setSettings] = useSettings();
+  const { ollama } = settings;
+  const { serverType = ServerType.CUSTOM_HOST, host, apiKey, connectStatus } = ollama;
+  const [serverSettings, setServerSettings] = useState({ serverType, host, apiKey });
 
-  const handleTestOllamaConnection = async () => {
+  const dispatch = <K extends keyof typeof serverSettings>(key: K) => {
+    return (v: (typeof serverSettings)[K]) => {
+      setServerSettings(prev => ({ ...prev, [key]: v }));
+    };
+  };
+
+  const handleTestServerConnection = async () => {
+    const host = serverSettings.serverType === ServerType.CUSTOM_HOST ? serverSettings.host : 'https://ollama.com';
+    const apiKey = serverSettings.serverType === ServerType.CUSTOM_HOST ? void 0 : serverSettings.apiKey;
     try {
-      const ollamaApi = new OllamaApi(ollamaHost);
+      const ollamaApi = new Ollama(host, apiKey);
       setConnecting(true);
-      const { models } = await ollamaApi.tags();
+      const { models } = await ollamaApi.list();
       setSettings(settings => {
         settings.ollama.connectStatus = ConnectStatus.SUCCESSFUL;
         settings.ollama.models = models.map(model => ({ ...model, canThink: canModelThink(model) }));
@@ -45,20 +55,59 @@ const OllamaServer = () => {
     } finally {
       setConnecting(false);
       setSettings(settings => {
-        settings.ollama.host = ollamaHost;
+        settings.ollama.serverType = serverSettings.serverType;
+        settings.ollama.host = host;
+        settings.ollama.apiKey = apiKey;
       });
     }
   };
 
   return (
     <SettingSection title="Ollama Server">
-      <View className="flex flex-row gap-x-2 rounded-xl bg-accent p-2">
-        <Input value={ollamaHost} placeholder="e.g. localhost:11434" className="flex-1 border-0 bg-transparent" onChangeText={setOllamaHost} />
-        <Button disabled={!ollamaHost || connecting} onPress={handleTestOllamaConnection}>
-          <Text>{connecting ? 'Connecting' : 'Connect'}</Text>
-          <View className={cn('size-2 rounded-full', connectStatus === ConnectStatus.DEFAULT ? 'bg-muted-foreground' : connectStatus === ConnectStatus.FAILED ? 'bg-red-500' : 'bg-green-500')} />
-        </Button>
-      </View>
+      <Tabs
+        value={serverSettings.serverType}
+        onValueChange={v => {
+          setServerSettings({
+            host: serverType === ServerType.CUSTOM_HOST ? host : '',
+            apiKey: serverType === ServerType.CUSTOM_HOST ? '' : apiKey,
+            serverType: v as ServerType
+          });
+        }}>
+        <TabsList>
+          <TabsTrigger value={ServerType.CUSTOM_HOST}>
+            <Text>via Custom Host</Text>
+          </TabsTrigger>
+          <TabsTrigger value={ServerType.OLLAMA_CLOUD}>
+            <Text>via Ollama Cloud</Text>
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value={ServerType.CUSTOM_HOST}>
+          <View className="flex flex-row gap-x-2 rounded-lg bg-accent p-2">
+            <Input value={serverSettings.host} placeholder="e.g. localhost:11434" className="flex-1 border-0 bg-transparent" onChangeText={dispatch('host')} />
+            <Button disabled={!serverSettings.host || connecting} onPress={handleTestServerConnection}>
+              <Text>{connecting ? 'Connecting' : 'Connect'}</Text>
+              <View className={cn('size-2 rounded-full', connectStatus === ConnectStatus.DEFAULT ? 'bg-muted-foreground' : connectStatus === ConnectStatus.FAILED ? 'bg-red-500' : 'bg-green-500')} />
+            </Button>
+          </View>
+          <Text className="mt-1 text-sm text-muted-foreground">Setup Ollama server with your own API endpoint.</Text>
+        </TabsContent>
+        <TabsContent value={ServerType.OLLAMA_CLOUD}>
+          <View className="flex flex-row gap-x-2 rounded-lg bg-accent p-2">
+            <Input value={serverSettings.apiKey} placeholder="Ollama cloud API key" className="flex-1 border-0 bg-transparent" onChangeText={dispatch('apiKey')} />
+            <Button disabled={!serverSettings.apiKey || connecting} onPress={handleTestServerConnection}>
+              <Text>{connecting ? 'Connecting' : 'Connect'}</Text>
+              <View className={cn('size-2 rounded-full', connectStatus === ConnectStatus.DEFAULT ? 'bg-muted-foreground' : connectStatus === ConnectStatus.FAILED ? 'bg-red-500' : 'bg-green-500')} />
+            </Button>
+          </View>
+          <Text className="mt-1 text-sm text-muted-foreground">
+            Need to get an API key? Please visit{' '}
+            <TextLink url="https://docs.ollama.com/cloud" external className="top-2.5 text-sm text-muted-foreground">
+              Ollama Cloud
+            </TextLink>
+            .
+          </Text>
+        </TabsContent>
+      </Tabs>
     </SettingSection>
   );
 };
