@@ -1,8 +1,10 @@
 import * as TabsPrimitive from '@rn-primitives/tabs';
+import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 
 import { TextClassContext } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
+import { useSettingsValue } from '@/store/settings';
 
 function Tabs({ className, ...props }: TabsPrimitive.RootProps & React.RefAttributes<TabsPrimitive.RootRef>) {
   return <TabsPrimitive.Root className={cn('flex flex-col gap-2', className)} {...props} />;
@@ -12,8 +14,10 @@ function TabsList({ className, ...props }: TabsPrimitive.ListProps & React.RefAt
   return <TabsPrimitive.List className={cn('flex h-9 flex-row items-center justify-center rounded-lg bg-muted p-[3px]', Platform.select({ web: 'inline-flex w-fit', native: 'mr-auto' }), className)} {...props} />;
 }
 
-function TabsTrigger({ className, ...props }: TabsPrimitive.TriggerProps & React.RefAttributes<TabsPrimitive.TriggerRef>) {
+function TabsTrigger({ className, onPress, ...props }: TabsPrimitive.TriggerProps & React.RefAttributes<TabsPrimitive.TriggerRef>) {
   const { value } = TabsPrimitive.useRootContext();
+  const { hapticFeedback } = useSettingsValue();
+
   return (
     <TextClassContext.Provider value={cn('text-foreground dark:text-muted-foreground text-sm font-medium', value === props.value && 'dark:text-foreground')}>
       <TabsPrimitive.Trigger
@@ -26,6 +30,12 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.TriggerProps & React
           props.value === value && 'bg-background dark:border-foreground/10 dark:bg-input/30',
           className
         )}
+        onPress={e => {
+          if (hapticFeedback) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+          onPress?.(e);
+        }}
         {...props}
       />
     </TextClassContext.Provider>

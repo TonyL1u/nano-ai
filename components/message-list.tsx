@@ -18,12 +18,12 @@ import { Text } from './ui/text';
 export function MessageList(props: { messages: Message[] }) {
   const { messages } = props;
   const { mutedForeground } = useThemeColor();
-  const { scroller, scrollToEnd, handleScroll, isAtEnd } = useScrollToEnd(200);
+  const { scroller, scrollToEnd, handleScroll, handleContentSizeChange, isAtEnd } = useScrollToEnd(200);
 
   useUpdateLayoutEffect(() => {
     if (scroller.current && messages.length > 0) {
-      const { isStreaming, isPending, isThinking } = messages.at(-1)!;
-      if (isStreaming || isPending || isThinking) {
+      const { isStreaming, isPending, isThinking, isAborted } = messages.at(-1)!;
+      if ((isStreaming || isPending || isThinking) && !isAborted) {
         scrollToEnd();
       }
     }
@@ -31,7 +31,7 @@ export function MessageList(props: { messages: Message[] }) {
 
   return (
     <View className="pt-safe-offset-12 relative flex-1">
-      <ScrollView ref={scroller} keyboardShouldPersistTaps="handled" onScroll={handleScroll}>
+      <ScrollView ref={scroller} keyboardShouldPersistTaps="handled" onScroll={handleScroll} onContentSizeChange={handleContentSizeChange}>
         <View className="px-safe-offset-4 flex flex-1 gap-y-4">
           {messages.map(({ role, content, thinkingContent, thinkingDuration, isPending, isThinking, isStreaming, isAborted }, index) => {
             if (role === 'user') {
@@ -76,7 +76,7 @@ export function MessageList(props: { messages: Message[] }) {
       </ScrollView>
       {isAtEnd ? null : (
         <NativeOnlyAnimatedView entering={FadeIn.duration(200)} exiting={FadeOut.duration(200)}>
-          <Button size="icon" className="absolute bottom-0 left-[50%] translate-x-[-50%] rounded-full" variant="outline" onPress={scrollToEnd}>
+          <Button size="icon" className="absolute bottom-0 left-[50%] translate-x-[-50%] rounded-full" variant="outline" onPress={() => scrollToEnd()}>
             <Icon as={ArrowDown} size={18} />
           </Button>
         </NativeOnlyAnimatedView>

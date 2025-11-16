@@ -1,32 +1,33 @@
 import type { TriggerRef } from '@rn-primitives/select';
 import * as Linking from 'expo-linking';
-import { Github, MoonStar, Sun, Trash2 } from 'lucide-react-native';
+import { Github, History, MoonStar, Sun, Trash2 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
+import { SelectInput } from '@/components/select-input';
 import { SettingSection } from '@/components/setting-section';
 import { TextLink } from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Icon } from '@/components/ui/icon';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/hooks/use-toast';
 import { Ollama } from '@/lib/ai-client/ollama';
+import { OLLAMA_CLOUD_DOCS_LINK, OLLAMA_CLOUD_HOST, PROJECT_GITHUB_URL } from '@/lib/constants';
 import { canModelThink, cn } from '@/lib/utils';
 import { useChats } from '@/store/chats';
-import { ConnectStatus, ServerType, useSettings } from '@/store/settings';
+import { ConnectStatus, ServerType, useSetSettings, useSettings } from '@/store/settings';
 
 const OllamaServer = () => {
   const [connecting, setConnecting] = useState(false);
   const toast = useToast();
   const [settings, setSettings] = useSettings();
   const { ollama } = settings;
-  const { serverType = ServerType.CUSTOM_HOST, host, apiKey, connectStatus } = ollama;
+  const { serverType = ServerType.CUSTOM_HOST, host, apiKey, connectStatus, hostList, apiKeyList } = ollama;
   const [serverSettings, setServerSettings] = useState({ serverType, host, apiKey });
 
   const dispatch = <K extends keyof typeof serverSettings>(key: K) => {
@@ -36,7 +37,7 @@ const OllamaServer = () => {
   };
 
   const handleTestServerConnection = async () => {
-    const host = serverSettings.serverType === ServerType.CUSTOM_HOST ? serverSettings.host : 'https://ollama.com';
+    const host = serverSettings.serverType === ServerType.CUSTOM_HOST ? serverSettings.host : OLLAMA_CLOUD_HOST;
     const apiKey = serverSettings.serverType === ServerType.CUSTOM_HOST ? void 0 : serverSettings.apiKey;
     try {
       const ollamaApi = new Ollama(host, apiKey);
@@ -45,6 +46,40 @@ const OllamaServer = () => {
       setSettings(settings => {
         settings.ollama.connectStatus = ConnectStatus.SUCCESSFUL;
         settings.ollama.models = models.map(model => ({ ...model, canThink: canModelThink(model) }));
+
+        switch (serverSettings.serverType) {
+          case ServerType.CUSTOM_HOST: {
+            const index = hostList.findIndex(({ value }) => value === host);
+            if (index > -1) {
+              settings.ollama.hostList.forEach((item, _index) => {
+                item.isLastUsed = _index === index;
+              });
+            } else {
+              settings.ollama.hostList.forEach(item => {
+                item.isLastUsed = false;
+              });
+              settings.ollama.hostList.push({ value: host, isLastUsed: true });
+            }
+
+            break;
+          }
+          case ServerType.OLLAMA_CLOUD: {
+            const index = apiKeyList.findIndex(({ value }) => value === apiKey);
+            if (index > -1) {
+              settings.ollama.apiKeyList.forEach((item, _index) => {
+                item.isLastUsed = _index === index;
+              });
+            } else {
+              settings.ollama.apiKeyList.forEach(item => {
+                item.isLastUsed = false;
+              });
+              settings.ollama.apiKeyList.push({ value: apiKey!, isLastUsed: true });
+            }
+
+            break;
+          }
+          case ServerType.OPEN_AI:
+        }
       });
       toast.success('Connect successfully!');
     } catch (error) {
@@ -83,7 +118,27 @@ const OllamaServer = () => {
         </TabsList>
         <TabsContent value={ServerType.CUSTOM_HOST}>
           <View className="flex flex-row gap-x-2 rounded-lg bg-accent p-2">
-            <Input value={serverSettings.host} placeholder="e.g. localhost:11434" className="flex-1 border-0 bg-transparent" onChangeText={dispatch('host')} />
+            <View className="flex-1">
+              <SelectInput
+                value={serverSettings.host}
+                placeholder="e.g. localhost:11434"
+                className="w-full border-0 bg-transparent"
+                onChangeText={dispatch('host')}
+                options={hostList.map(item => ({ ...item, label: item.value }))}
+                contentProps={{
+                  insets: { left: 16, right: 16 },
+                  sideOffset: 16
+                }}
+                renderItem={({ label, isLastUsed }) => {
+                  return (
+                    <>
+                      <Text>{label}</Text>
+                      {isLastUsed ? <Text className="text-sm text-muted-foreground">last used</Text> : null}
+                    </>
+                  );
+                }}
+              />
+            </View>
             <Button disabled={!serverSettings.host || connecting} onPress={handleTestServerConnection}>
               <Text>{connecting ? 'Connecting' : 'Connect'}</Text>
               <View className={cn('size-2 rounded-full', connectStatus === ConnectStatus.DEFAULT ? 'bg-muted-foreground' : connectStatus === ConnectStatus.FAILED ? 'bg-red-500' : 'bg-green-500')} />
@@ -93,15 +148,37 @@ const OllamaServer = () => {
         </TabsContent>
         <TabsContent value={ServerType.OLLAMA_CLOUD}>
           <View className="flex flex-row gap-x-2 rounded-lg bg-accent p-2">
-            <Input value={serverSettings.apiKey} placeholder="Ollama cloud API key" className="flex-1 border-0 bg-transparent" onChangeText={dispatch('apiKey')} />
+            <View className="flex-1">
+              <SelectInput
+                value={serverSettings.apiKey}
+                placeholder="Ollama cloud API key"
+                className="w-full border-0 bg-transparent"
+                onChangeText={dispatch('apiKey')}
+                options={apiKeyList.map(item => ({ ...item, label: item.value }))}
+                contentProps={{
+                  insets: { left: 16, right: 16 },
+                  sideOffset: 16
+                }}
+                renderItem={({ label, isLastUsed }) => {
+                  return (
+                    <View className="flex flex-1 flex-row items-center justify-between gap-x-2">
+                      <Text className="flex-1" numberOfLines={1}>
+                        {label}
+                      </Text>
+                      {isLastUsed ? <Text className="text-sm text-muted-foreground">last used</Text> : null}
+                    </View>
+                  );
+                }}
+              />
+            </View>
             <Button disabled={!serverSettings.apiKey || connecting} onPress={handleTestServerConnection}>
               <Text>{connecting ? 'Connecting' : 'Connect'}</Text>
               <View className={cn('size-2 rounded-full', connectStatus === ConnectStatus.DEFAULT ? 'bg-muted-foreground' : connectStatus === ConnectStatus.FAILED ? 'bg-red-500' : 'bg-green-500')} />
             </Button>
           </View>
           <Text className="mt-1 text-sm text-muted-foreground">
-            Need to get an API key? Please visit{' '}
-            <TextLink url="https://docs.ollama.com/cloud" external className="top-2.5 text-sm text-muted-foreground">
+            Don&apos;t know how get an API key? Please visit{' '}
+            <TextLink url={OLLAMA_CLOUD_DOCS_LINK} external className="top-2.5 text-sm text-muted-foreground">
               Ollama Cloud
             </TextLink>
             .
@@ -138,7 +215,7 @@ const System = () => {
               <Icon as={colorScheme === 'light' ? Sun : MoonStar} />
             </Button>
           </SelectTrigger>
-          <SelectContent insets={{ left: 12, right: 12 }} className="w-[100px]" side="bottom">
+          <SelectContent insets={{ right: 16 }} className="w-[100px]" side="bottom">
             <SelectItem label="Light" value="light" />
             <SelectItem label="Dark" value="dark" />
             <SelectItem label="System" value="system" showCheck={false} />
@@ -161,16 +238,22 @@ const System = () => {
 };
 
 const Actions = () => {
+  const setSettings = useSetSettings();
   const [, { clear }] = useChats();
   const [open, setOpen] = useState(false);
 
   const handleViewOnGithub = async () => {
-    const githubUrl = 'https://github.com/TonyL1u/nano-ai';
-    const supported = await Linking.canOpenURL(githubUrl);
+    const supported = await Linking.canOpenURL(PROJECT_GITHUB_URL);
 
     if (supported) {
-      await Linking.openURL(githubUrl);
+      await Linking.openURL(PROJECT_GITHUB_URL);
     }
+  };
+  const handleClearHistoryAPIEndpoints = () => {
+    setSettings(settings => {
+      settings.ollama.hostList = [];
+      settings.ollama.apiKeyList = [];
+    });
   };
 
   return (
@@ -178,6 +261,10 @@ const Actions = () => {
       <Button variant="outline" onPress={handleViewOnGithub}>
         <Text>View on Github</Text>
         <Icon as={Github} size={16} />
+      </Button>
+      <Button variant="outline" onPress={handleClearHistoryAPIEndpoints}>
+        <Text>Clear API Endpoint Records</Text>
+        <Icon as={History} size={16} />
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>

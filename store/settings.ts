@@ -1,6 +1,7 @@
 import type { ModelResponse } from 'ollama';
 
 import { useSetStorageAtom, useStorageAtom, useStorageAtomValue } from '@/hooks/use-storage-atom';
+import { DEFAULT_CUSTOM_HOST } from '@/lib/constants';
 import { createStorageAtom, StorageKey } from '@/lib/local-storage';
 import { withImmer } from '@/lib/utils';
 
@@ -12,16 +13,19 @@ export enum ConnectStatus {
 
 export enum ServerType {
   CUSTOM_HOST = 'custom_host',
-  OLLAMA_CLOUD = 'ollama_cloud'
+  OLLAMA_CLOUD = 'ollama_cloud',
+  OPEN_AI = 'open_ai'
 }
 
 export interface Settings {
   ollama: {
     serverType: ServerType;
-    host: string;
-    apiKey?: string;
     connectStatus: ConnectStatus;
     models: (ModelResponse & { canThink?: boolean })[];
+    host: string;
+    hostList: { value: string; isLastUsed: boolean }[];
+    apiKey?: string;
+    apiKeyList: { value: string; isLastUsed: boolean }[];
   };
   hapticFeedback: boolean;
 }
@@ -29,9 +33,11 @@ export interface Settings {
 export const settings = createStorageAtom(StorageKey.SETTINGS, {
   ollama: {
     serverType: ServerType.CUSTOM_HOST,
-    host: 'localhost:11434',
+    host: DEFAULT_CUSTOM_HOST,
     connectStatus: ConnectStatus.DEFAULT,
-    models: []
+    models: [],
+    hostList: [],
+    apiKeyList: []
   },
   hapticFeedback: true
 } as Settings);
