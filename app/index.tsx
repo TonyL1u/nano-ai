@@ -39,7 +39,7 @@ const IMAGE_STYLE = {
 
 export default function Index() {
   const { colorScheme } = useColorScheme();
-  const { start: startLiveActivity, stop: stopLiveActivity, update: updateLiveActivity } = useLiveActivity();
+  const { start: startLiveActivity, stop: stopLiveActivity, update: updateLiveActivity, running } = useLiveActivity();
   const [{ current, data }] = useChats();
   const [messages] = useMessage();
   const drawerRef = useRef<DrawerLayoutMethods>(null);
@@ -48,6 +48,8 @@ export default function Index() {
   const lastStateRef = useRef(AppState.currentState);
 
   const handleSend = async (input: string, think?: boolean) => {
+    if (running) stopLiveActivity();
+
     requestAbortMap.current[current] = abort;
     startLiveActivity(input, data[current].model!.name);
     await request(input, think);

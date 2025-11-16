@@ -18,7 +18,7 @@ import { Text } from './ui/text';
 export function MessageList(props: { messages: Message[] }) {
   const { messages } = props;
   const { mutedForeground } = useThemeColor();
-  const { scroller, scrollToEnd, handleScroll, handleContentSizeChange, isAtEnd } = useScrollToEnd(200);
+  const { scroller, scrollToEnd, handleScroll, handleLayout, handleContentSizeChange, isAtEnd } = useScrollToEnd(200);
 
   useUpdateLayoutEffect(() => {
     if (scroller.current && messages.length > 0) {
@@ -31,7 +31,7 @@ export function MessageList(props: { messages: Message[] }) {
 
   return (
     <View className="pt-safe-offset-12 relative flex-1">
-      <ScrollView ref={scroller} keyboardShouldPersistTaps="handled" onScroll={handleScroll} onContentSizeChange={handleContentSizeChange}>
+      <ScrollView ref={scroller} keyboardShouldPersistTaps="handled" onScroll={handleScroll} onContentSizeChange={handleContentSizeChange} onLayout={handleLayout}>
         <View className="px-safe-offset-4 flex flex-1 gap-y-4">
           {messages.map(({ role, content, thinkingContent, thinkingDuration, isPending, isThinking, isStreaming, isAborted }, index) => {
             if (role === 'user') {

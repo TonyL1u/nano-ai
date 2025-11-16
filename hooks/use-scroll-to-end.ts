@@ -5,16 +5,16 @@ export function useScrollToEnd(threshold = 0) {
   const [isAtEnd, setIsAtEnd] = useState(true);
   const scroller = useRef<ScrollView>(null);
   const scrollDistance = useRef(0);
-  const contentHeight = useRef(0);
   const viewportHeight = useRef(0);
 
-  const updateInitialState = () => {
-    setIsAtEnd(viewportHeight.current + scrollDistance.current + threshold >= contentHeight.current - 1);
-  };
+  const handleLayout = (e => {
+    viewportHeight.current = e.nativeEvent.layout.height;
+  }) as NonNullable<ScrollView['props']['onLayout']>;
 
   const handleContentSizeChange = ((_, height) => {
-    contentHeight.current = height;
-    updateInitialState();
+    if (viewportHeight.current === 0 && scrollDistance.current === 0) return;
+
+    setIsAtEnd(viewportHeight.current + scrollDistance.current + threshold >= height - 1);
   }) as NonNullable<ScrollView['props']['onContentSizeChange']>;
 
   const handleScroll = (event => {
@@ -22,12 +22,16 @@ export function useScrollToEnd(threshold = 0) {
     scrollDistance.current = contentOffset.y;
     viewportHeight.current = layoutMeasurement.height;
 
-    setIsAtEnd(layoutMeasurement.height + contentOffset.y + threshold >= contentSize.height - 1);
+    if (scrollDistance.current < 0 && isAtEnd) {
+      setIsAtEnd(true);
+    } else {
+      setIsAtEnd(layoutMeasurement.height + contentOffset.y + threshold >= contentSize.height - 1);
+    }
   }) as NonNullable<ScrollView['props']['onScroll']>;
 
   const scrollToEnd = (animated = true) => {
     scroller.current?.scrollToEnd({ animated });
   };
 
-  return { scroller, isAtEnd, handleScroll, handleContentSizeChange, scrollToEnd };
+  return { scroller, isAtEnd, handleScroll, handleLayout, handleContentSizeChange, scrollToEnd };
 }

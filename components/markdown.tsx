@@ -128,7 +128,7 @@ export function Markdown(props: { content: string; style?: TextStyle }) {
 
           return (
             <ScrollView key={node.key} horizontal showsHorizontalScrollIndicator style={styles.table}>
-              <View style={{ width: columns * 125 || 400 }}>{children}</View>
+              <View style={{ width: Math.max(columns * 125, 425) }}>{children}</View>
             </ScrollView>
           );
         },
