@@ -9,6 +9,7 @@
     "clean": "rm -rf .expo node_modules",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix"
   },
+  "license": "MIT",
   "dependencies": {
     "@bacons/apple-targets": "^3.0.5",
     "@react-native-async-storage/async-storage": "2.2.0",
