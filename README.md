@@ -38,6 +38,18 @@ Nano AI is a modern cross-platform chat client for [Ollama](https://ollama.com/)
 
 7. Chats history supported.
 
+<div style="display: flex; column-gap: 8px; margin-top: 16px; margin-bottom: 16px; width: max-content;">
+  <img src="assets/screenshots/ios_7.png" style="height: 500px;" />
+</div>
+
+8. Chatting live activity supported.
+
+<div style="display: flex; column-gap: 8px; margin-top: 16px; margin-bottom: 16px; width: max-content;">
+  <img src="assets/screenshots/ios_8_1.png" style="height: 500px;" />
+  <img src="assets/screenshots/ios_8_2.png" style="height: 500px;" />
+  <img src="assets/screenshots/ios_8_3.png" style="height: 500px;" />
+</div>
+
 ## Inspired by
 
 - [Ollama](https://ollama.com/)

@@ -1,8 +1,9 @@
+import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { Edit, MoonStarIcon, Sidebar, SunIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import { useRef } from 'react';
-import { Image, KeyboardAvoidingView, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { AppState, Image, KeyboardAvoidingView, ScrollView, TouchableOpacity, View } from 'react-native';
 import ReanimatedDrawerLayout, { DrawerLayoutMethods } from 'react-native-gesture-handler/ReanimatedDrawerLayout';
 
 import { ConnectTips } from '@/components/connect-tips';
@@ -12,9 +13,11 @@ import { MessageList } from '@/components/message-list';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { useLiveActivity } from '@/hooks/use-live-activity';
 import { useMessage } from '@/hooks/use-message';
 import { useModel } from '@/hooks/use-model';
 import { useOllama } from '@/hooks/use-ollama';
+import { STOP_LIVE_ACTIVITY_ACTION_TARGET } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { useChats } from '@/store/chats';
 import { ConnectStatus, useSettingsValue } from '@/store/settings';
@@ -36,19 +39,56 @@ const IMAGE_STYLE = {
 
 export default function Index() {
   const { colorScheme } = useColorScheme();
-  const [{ current }] = useChats();
+  const { start: startLiveActivity, stop: stopLiveActivity, update: updateLiveActivity } = useLiveActivity();
+  const [{ current, data }] = useChats();
   const [messages] = useMessage();
   const drawerRef = useRef<DrawerLayoutMethods>(null);
   const { request, abort } = useOllama();
   const requestAbortMap = useRef<Record<string, () => void>>({});
+  const lastStateRef = useRef(AppState.currentState);
 
   const handleSend = async (input: string, think?: boolean) => {
     requestAbortMap.current[current] = abort;
+    startLiveActivity(input, data[current].model!.name);
     await request(input, think);
   };
   const handleAbort = () => {
-    requestAbortMap.current[current].call(null);
+    requestAbortMap.current[current]?.call(null);
+    stopLiveActivity();
   };
+
+  useEffect(() => {
+    if (messages.length > 1) {
+      updateLiveActivity(messages.at(-1)!);
+      if (lastStateRef.current === 'active' && messages.at(-1)?.isAborted) {
+        stopLiveActivity();
+      }
+    }
+
+    const sub = AppState.addEventListener('change', next => {
+      if (lastStateRef.current === 'background' && next === 'active' && messages.length > 1) {
+        const { isStreaming, isPending, isThinking, isAborted } = messages.at(-1)!;
+        if (!isStreaming && !isPending && !isThinking && !isAborted) {
+          stopLiveActivity();
+        }
+      }
+      lastStateRef.current = next;
+    });
+
+    return () => sub.remove();
+  }, [messages]);
+
+  useEffect(() => {
+    const sub = Linking.addEventListener('url', ({ url }) => {
+      const { queryParams } = Linking.parse(url);
+      const { from, action } = queryParams || {};
+      if (from === 'dynamic-island' && action === STOP_LIVE_ACTIVITY_ACTION_TARGET) {
+        handleAbort();
+      }
+    });
+
+    return () => sub.remove();
+  }, []);
 
   return (
     <ReanimatedDrawerLayout

@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "web"],
+  "apple": {
+    "modules": ["ActivityControllerModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.activitycontroller.ActivityControllerModule"]
+  }
+}

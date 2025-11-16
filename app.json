@@ -13,17 +13,15 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.nano-ai"
+      "bundleIdentifier": "com.anonymous.nano-ai",
+      "infoPlist": {
+        "NSSupportsLiveActivities": true
+      }
     },
-    "plugins": [
-      "expo-router",
-      "expo-font"
-    ],
+    "plugins": ["expo-router", "expo-font", "@bacons/apple-targets"],
     "experiments": {
       "typedRoutes": true
     },

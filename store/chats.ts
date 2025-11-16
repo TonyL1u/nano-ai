@@ -4,17 +4,20 @@ import { useStorageAtom } from '@/hooks/use-storage-atom';
 import { createStorageAtom, StorageKey } from '@/lib/local-storage';
 import { withImmer } from '@/lib/utils';
 
-export interface Message {
+export interface MessageStatus {
+  isPending: boolean;
+  isThinking: boolean;
+  isStreaming: boolean;
+  isAborted: boolean;
+}
+
+export interface Message extends Partial<MessageStatus> {
   role: string;
   content: string;
   createAt: number;
   updateAt?: number;
   thinkingContent?: string;
   thinkingDuration?: number;
-  isThinking?: boolean;
-  isStreaming?: boolean;
-  isPending?: boolean;
-  isAborted?: boolean;
 }
 
 export interface Chat {
