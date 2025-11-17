@@ -1,4 +1,5 @@
 import { ArrowDown, Lightbulb } from 'lucide-react-native';
+import { useMemo, useRef } from 'react';
 import { ScrollView, View } from 'react-native';
 import { FadeIn, FadeOut } from 'react-native-reanimated';
 
@@ -19,19 +20,41 @@ export function MessageList(props: { messages: Message[] }) {
   const { messages } = props;
   const { mutedForeground } = useThemeColor();
   const { scroller, scrollToEnd, handleScroll, handleLayout, handleContentSizeChange, isAtEnd } = useScrollToEnd(200);
+  const autoScrollEnabled = useRef(true);
+  const inChatting = useMemo(() => {
+    if (messages.length > 0) {
+      const { isPending = false, isStreaming = false, isThinking = false, isAborted = false } = messages.at(-1)!;
+
+      return (isPending || isStreaming || isThinking) && !isAborted;
+    }
+
+    return false;
+  }, [messages]);
 
   useUpdateLayoutEffect(() => {
-    if (scroller.current && messages.length > 0) {
-      const { isStreaming, isPending, isThinking, isAborted } = messages.at(-1)!;
-      if ((isStreaming || isPending || isThinking) && !isAborted) {
-        scrollToEnd();
-      }
+    if (isAtEnd) {
+      autoScrollEnabled.current = true;
     }
-  }, [messages]);
+  }, [isAtEnd]);
 
   return (
     <View className="pt-safe-offset-12 relative flex-1">
-      <ScrollView ref={scroller} keyboardShouldPersistTaps="handled" onScroll={handleScroll} onContentSizeChange={handleContentSizeChange} onLayout={handleLayout}>
+      <ScrollView
+        ref={scroller}
+        keyboardShouldPersistTaps="handled"
+        onLayout={handleLayout}
+        onScroll={handleScroll}
+        onScrollBeginDrag={() => {
+          if (inChatting && autoScrollEnabled.current) {
+            autoScrollEnabled.current = false;
+          }
+        }}
+        onContentSizeChange={(...args) => {
+          if (inChatting && autoScrollEnabled.current) {
+            scrollToEnd();
+          }
+          handleContentSizeChange(...args);
+        }}>
         <View className="px-safe-offset-4 flex flex-1 gap-y-4">
           {messages.map(({ role, content, thinkingContent, thinkingDuration, isPending, isThinking, isStreaming, isAborted }, index) => {
             if (role === 'user') {
