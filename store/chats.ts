@@ -43,6 +43,7 @@ export function useChats() {
 
       if (chats.current !== chats.data.length - 1) {
         chats.current = chats.data.length - 1;
+        chats.data[chats.current].model = ollama.defaultModel;
       }
     });
   };
@@ -52,11 +53,12 @@ export function useChats() {
       chats.data.splice(index, 1);
 
       if (chats.data.length === 0 || chats.data.at(-1)?.messages.length) {
-        chats.data.push({ messages: [] });
+        chats.data.push({ messages: [], model: ollama.defaultModel });
       }
 
       if (chats.current !== chats.data.length - 1) {
         chats.current = chats.data.length - 1;
+        chats.data[chats.current].model = ollama.defaultModel;
       }
     });
   };
