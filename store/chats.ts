@@ -4,6 +4,8 @@ import { useStorageAtom } from '@/hooks/use-storage-atom';
 import { createStorageAtom, StorageKey } from '@/lib/local-storage';
 import { withImmer } from '@/lib/utils';
 
+import { useSettingsValue } from './settings';
+
 export interface MessageStatus {
   isPending: boolean;
   isThinking: boolean;
@@ -30,12 +32,13 @@ export const chats = createStorageAtom(StorageKey.CHATS_HISTORY, { current: 0, d
 
 export function useChats() {
   const [_chats, _setChats] = useStorageAtom(chats);
+  const { ollama } = useSettingsValue();
   const set = withImmer(_setChats);
 
   const create = () => {
     set(chats => {
       if (chats.data.length === 0 || chats.data.at(-1)?.messages.length) {
-        chats.data.push({ messages: [] });
+        chats.data.push({ messages: [], model: ollama.defaultModel });
       }
 
       if (chats.current !== chats.data.length - 1) {

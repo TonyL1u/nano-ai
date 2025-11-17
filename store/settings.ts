@@ -17,11 +17,16 @@ export enum ServerType {
   OPEN_AI = 'open_ai'
 }
 
+export interface Model extends ModelResponse {
+  canThink?: boolean;
+}
+
 export interface Settings {
   ollama: {
     serverType: ServerType;
     connectStatus: ConnectStatus;
-    models: (ModelResponse & { canThink?: boolean })[];
+    models: Model[];
+    defaultModel?: Model;
     host: string;
     hostList: { value: string; isLastUsed: boolean }[];
     apiKey?: string;

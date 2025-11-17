@@ -8,12 +8,12 @@ import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { useModel } from '@/hooks/use-model';
 import { cn } from '@/lib/utils';
-import { useSettingsValue } from '@/store/settings';
+import { useSettings } from '@/store/settings';
 
 export default function ModalScreen() {
   const router = useRouter();
   const [currentModel, setCurrentModel] = useModel();
-  const { ollama } = useSettingsValue();
+  const [{ ollama }, setSettings] = useSettings();
   const { models } = ollama;
 
   return (
@@ -30,6 +30,9 @@ export default function ModalScreen() {
               className={cn('flex flex-row justify-between', isCurrent ? 'bg-accent' : '')}
               onPress={() => {
                 setCurrentModel(model);
+                setSettings(settings => {
+                  settings.ollama.defaultModel = model;
+                });
                 router.dismiss();
               }}>
               <Text className="text-base">{name}</Text>
