@@ -177,7 +177,7 @@ const OllamaServer = () => {
             </Button>
           </View>
           <Text className="mt-1 text-sm text-muted-foreground">
-            Don&apos;t know how get an API key? Please visit{' '}
+            Don&apos;t know how to get an API key? Please visit{' '}
             <TextLink url={OLLAMA_CLOUD_DOCS_LINK} external className="top-2.5 text-sm text-muted-foreground">
               Ollama Cloud
             </TextLink>

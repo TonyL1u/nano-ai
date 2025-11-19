@@ -1,6 +1,12 @@
 # Nano AI
 
-Nano AI is a modern cross-platform chat client for [Ollama](https://ollama.com/) built with [React Native](https://reactnative.dev/) and [Expo](https://expo.dev/). It delivers a native-quality experience on every device while keeping conversations fast and private.
+Nano AI is a modern cross-platform chat client for [Ollama](https://ollama.com/) built with [React Native](https://reactnative.dev/). It delivers a native-quality experience on every device while keeping conversations fast and private.
+
+## Download
+
+- [iOS](https://apps.apple.com/us/app/nano-ai-for-ollama/id6755102943)
+- Android: WIP...
+- [macOS/Windows/Linux](https://ollama.com/download) (official)
 
 ## Feature Highlights
 
@@ -13,7 +19,8 @@ Nano AI is a modern cross-platform chat client for [Ollama](https://ollama.com/)
 2. **Zero-friction onboarding** — Focused on the essentials so you can start chatting immediately.
 
 <div style="display: flex; column-gap: 8px; margin-top: 16px; margin-bottom: 16px; width: max-content;">
-  <img src="assets/screenshots/ios_2.png" style="height: 500px;" />
+  <img src="assets/screenshots/ios_2_1.png" style="height: 500px;" />
+  <img src="assets/screenshots/ios_2_2.png" style="height: 500px;" />
 </div>
 
 3. **Local-first privacy** — Chats and settings never leave the device.
