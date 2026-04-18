@@ -70,8 +70,8 @@ export function useChat(options?: UseChatOptions) {
   };
 
   const processing = async (input: string, index?: number) => {
+    const updater = createUpdater(index);
     try {
-      const updater = createUpdater(index);
       const chatWithAI = createChatWithAI(index);
 
       const [stream, abort] = chatWithAI(input);
@@ -144,6 +144,9 @@ export function useChat(options?: UseChatOptions) {
             break;
           case 'error':
             updater(msg => {
+              msg.isPending = false;
+              msg.isStreaming = false;
+              msg.isThinking = false;
               msg.isAborted = true;
             });
             onFinished?.({ isAbort: false, isError: true, messages });
@@ -159,6 +162,12 @@ export function useChat(options?: UseChatOptions) {
               };
             });
             if (part.finishReason === 'error') {
+              updater(msg => {
+                msg.isPending = false;
+                msg.isStreaming = false;
+                msg.isThinking = false;
+                msg.isAborted = true;
+              });
               const error = new Error('Network error', { cause: `Stream terminated by ${finishReason}` });
               handleError(error);
             }
@@ -169,15 +178,30 @@ export function useChat(options?: UseChatOptions) {
         }
       }
     } catch (error) {
+      // Network failure or thrown exception before/during streaming — ensure
+      // the assistant message never stays stuck in a pending/streaming state.
+      updater(msg => {
+        msg.isPending = false;
+        msg.isStreaming = false;
+        msg.isThinking = false;
+        msg.isAborted = true;
+      });
       handleError(error as Error);
+    } finally {
+      stopRef.current = null;
     }
   };
 
   const sendMessage = async (input: string) => {
     const createAt = +new Date();
+    let assistantIndex = -1;
     setSessions(sessions => {
+      const msgs = sessions.data[current].messages;
+      // Capture the index now so processing always targets this specific
+      // assistant message, even if another send runs concurrently.
+      assistantIndex = msgs.length + 1;
       sessions.data[current].messages = [
-        ...sessions.data[current].messages,
+        ...msgs,
         { role: 'user', content: input, createAt },
         {
           role: 'assistant',
@@ -190,7 +214,7 @@ export function useChat(options?: UseChatOptions) {
       ];
     });
 
-    await processing(input);
+    await processing(input, assistantIndex);
   };
 
   const regenerate = async (index: number) => {
