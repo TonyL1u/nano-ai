@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+
 import { withImmer } from '@/lib/utils';
 import { sessions } from '@/store/sessions';
 
@@ -8,6 +10,22 @@ export function useSessions() {
   const [_sessions, _setSessions] = useStorageAtom(sessions);
   const [{ defaultModel }] = useSettings();
   const set = withImmer(_setSessions);
+
+  useEffect(() => {
+    set(sessions => {
+      for (const session of sessions.data) {
+        for (const msg of session.messages) {
+          if (msg.isPending || msg.isStreaming || msg.isThinking) {
+            msg.isPending = false;
+            msg.isStreaming = false;
+            msg.isThinking = false;
+            msg.isAborted = true;
+          }
+        }
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const create = () => {
     set(sessions => {
